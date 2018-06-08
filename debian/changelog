@@ -1,3 +1,9 @@
+anbox-modules (11) bionic; urgency=medium
+
+  * Split kernel modules out of anbox main repository.
+
+ -- Shengjing Zhu <i@zhsj.me>  Fri, 08 Jun 2018 23:53:35 +0800
+
 anbox (10) bionic; urgency=medium
 
   * Bump version
