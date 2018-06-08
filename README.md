@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/anbox/anbox-modules.svg?branch=master)](https://travis-ci.org/anbox/anbox)
+
 # Anbox Kernel Modules
 
 This repository contains the kernel modules necessary to run the Anbox
