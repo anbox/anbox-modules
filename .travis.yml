@@ -1,9 +1,36 @@
-language: cpp
+language: c
 os: linux
-sudo: required
+sudo: false
 
-services:
-  - docker
+addons:
+  apt:
+    packages:
+      - bison
+      - flex
+      - libelf-dev
+      - dpkg-dev
+      - debhelper
+      - dkms
+      - fakeroot
+
+env:
+  - KVER=4.4
+  - KVER=4.8
+  - KVER=4.9
+  - KVER=4.13
+  - KVER=4.14
+  - KVER=4.15
+  - KVER=4.16
+  - KVER=4.17
+  - KVER=master
+
+matrix:
+  allow_failures:
+    - env: KVER=master
+  include:
+  - script:
+    - dpkg-buildpackage -us -uc
+    env: KVER="Debian Package Building"
 
 script:
-  - scripts/build-with-docker.sh
+  - ./scripts/build-against-kernel.sh ${KVER}
