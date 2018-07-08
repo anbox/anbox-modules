@@ -41,7 +41,7 @@ You can verify by loading these modules and checking the created devices:
 
 ```
 $ sudo modprobe ashmem_linux
-$ sudo modprobe ashmem_binder
+$ sudo modprobe binder_linux
 $ ls -alh /dev/binder /dev/ashmem
 ```
 
