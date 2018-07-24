@@ -1,0 +1,93 @@
+sudo: required
+services:
+- docker
+
+env:
+  global:
+  - BINTRAY_USER=vicamo
+  - BINTRAY_REPO=ppa
+  - BINTRAY_COMPONENT=contrib
+  - BINTRAY_DESC="DKMS files to build and install ANDROID binder"
+  - DOCKER_EXEC="sudo docker exec test_container"
+  matrix:
+  - SUITE=sid DEBIAN_ARCH=amd64 KERNEL_ARCH=amd64
+  - SUITE=sid DEBIAN_ARCH=arm64 KERNEL_ARCH=arm64
+  - SUITE=sid DEBIAN_ARCH=armel KERNEL_ARCH=marvell
+  - SUITE=sid DEBIAN_ARCH=armhf KERNEL_ARCH=armmp
+  - SUITE=sid DEBIAN_ARCH=i386 KERNEL_ARCH=686
+  - SUITE=sid DEBIAN_ARCH=mips KERNEL_ARCH=5kc-malta
+  - SUITE=sid DEBIAN_ARCH=mips64el KERNEL_ARCH=5kc-malta
+  - SUITE=sid DEBIAN_ARCH=mipsel KERNEL_ARCH=5kc-malta
+  - SUITE=sid DEBIAN_ARCH=ppc64el KERNEL_ARCH=powerpc64le
+  - SUITE=sid DEBIAN_ARCH=s390x KERNEL_ARCH=s390x
+
+matrix:
+  fast_finish: true
+  allow_failures:
+  - env: SUITE=sid DEBIAN_ARCH=armel KERNEL_ARCH=marvell
+
+branches:
+  only:
+  - /^[^\/]+$/
+  - /^\d+\.\d+/
+
+before_install:
+- docker run --rm --privileged vicamo/binfmt-qemu:latest
+- cat /proc/sys/fs/binfmt_misc/qemu-*
+- sudo docker pull vicamo/debian-linux-kernel:${SUITE}-${DEBIAN_ARCH}
+- sudo docker images
+- |
+  sudo docker run --detach --tty \
+    --name test_container \
+    --volume ${TRAVIS_BUILD_DIR%${TRAVIS_REPO_SLUG}}:${TRAVIS_BUILD_DIR%${TRAVIS_REPO_SLUG}} \
+    --workdir ${TRAVIS_BUILD_DIR} \
+    vicamo/debian-linux-kernel:${SUITE}-${DEBIAN_ARCH} \
+    /bin/bash
+
+install:
+- ${DOCKER_EXEC} apt-get update --quiet --quiet
+- ${DOCKER_EXEC} apt-get install --no-install-recommends --yes
+    devscripts equivs
+- ${DOCKER_EXEC} mk-build-deps
+    --install --remove
+    --tool 'apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes --allow-unauthenticated'
+
+script:
+- ${DOCKER_EXEC} env WORKAROUND_BINTRAY_DEB_SUPPORT=1
+    dpkg-buildpackage -i -us -uc -b
+- ${DOCKER_EXEC} apt-get install --no-install-recommends --yes
+    linux-headers-${KERNEL_ARCH}
+- ${DOCKER_EXEC} dpkg -i ../*.deb
+
+before_deploy:
+- |
+  cat .bintray.json.in | \
+    sed -e "s#@BINTRAY_PACKAGE@#$(cat debian/control | grep ^Source: | awk '{print $2}')#g" \
+        -e "s#@BINTRAY_USER@#${BINTRAY_USER}#g" \
+        -e "s#@BINTRAY_REPO@#${BINTRAY_REPO}#g" \
+        -e "s#@BINTRAY_DESC@#${BINTRAY_DESC}#g" \
+        -e "s#@GITHUB_REPO@#${TRAVIS_REPO_SLUG}#g" \
+        -e "s#@BINTRAY_VERSION@#$(cat debian/changelog | head -n 1 | sed 's,.*(\(.*\)).*,\1,')#g" \
+        -e "s#@BINTRAY_RELEASE_DATE@#$(date -Iseconds --date="$(cat debian/changelog | grep -m 1 '^ -- ' | sed 's,^.*  ,,')")#g" \
+        -e "s#@BINTRAY_OUTDIR@#$(dirname ${TRAVIS_BUILD_DIR})#g" \
+        -e "s#@BINTRAY_POOLABBR@#$(cat debian/control | grep ^Source: | awk '{print $2}' | cut -c1)#g" \
+        -e "s#@BINTRAY_SUITE@#${SUITE}#g" \
+        -e "s#@BINTRAY_COMPONENT@#${BINTRAY_COMPONENT}#g" \
+        -e "s#@BINTRAY_ARCH@#all#g" | \
+    tee .bintray.json
+
+deploy:
+  skip_cleanup: true
+  provider: bintray
+  file: .bintray.json
+  user: vicamo
+  key:
+    secure: "mnuZVOhHxOVgjasKwBHw3ukKhLM6ACtDTjHtc/ETzU29BDEBsijo1a1Qbked152uq4dkj3HLGG4v/M+HqxaM2zAql1+4afNwx0HKnVro/NhzkVtJ6gdMBFM/bW/AtboDOCyPrOivo4ImamlV278uBZgmtWjQYFTFrxY3Pn8V87lDbIe6xDGwT8ifn4zVWa7SiV5VgxwqrUWfncpHVqT0pEq4GMOupVW4acFODhDWp7hIuJgdfZucCoFDwNV69ZaVAdqfQ5PG6cBuOX4eB5i1SfceMip7xAgvSXZpvEfLH5jP5tQhKAN6TRnCqpz/a9jWgDF/rfhHFtOCF/M0dqE2eobyqrcgVYpJ2rxKRgCcyBGZo+EZUjA0DKWP8eUmjd2mYbpGJF/E3vGykcq1cauQOZ4mnNIgGhEKhQ9fpbQ7BUp8/UF65sEQbeOVXahWuFRZ/12LLmxmvldZ3VEXBcsz0WmPAG+9s/POGUbu4/U0r8D9vJdNmtU/NOTyf0QkX7jl6TtbN6Q/W3FngmVLl05l/u97bczZtAeNzU+kT7CYvoWBciGkHNP/TPtYqf1Ax9WyyeRstTfHyXOqjiuJDxV2BFPsEoc/U2TCFB+C+qRsABzxdAq+pioH+NLyF4FmTm6jvESMrS3J6X69k3SQAlalsJC72TZHUUdOZZMmiMsOZXQ="
+  on:
+    tags: true
+    condition: "${DEBIAN_ARCH} = amd64"
+
+notifications:
+  slack:
+    rooms:
+    - secure: ZdDF6YYZfwlMx2H21h/i1AWgoaQtQQzZQOm9iJyd3gOPuVQ4ADTZ1rvPJEfIzvILXIiIuSX1xdqhzhbqgHaC8r3M3+H6V+1JafN2zZzSbrYiVn6YSB64tpdoiNywbBOYxMXyvoquvIu/jN18C7LJnfiEzzBrLtojiZY37Z2krbzGfbLKzl7b5UxBhHsJLc7Ji1qzyjVukGpDXELNwnzEH0pIJ7Ify9+lCOwuI8p0uzztmX5S8q8LeqSwmwMT2yczn7R8BoUNrWLD3ZS+wUVSXdjVRd5DOUR36NQOSE0mHujP32XZ8kLGsFElNOmryzAK2Bfn567jHf60hLW1NQ+BdyeuUq8f4MNFw2E1geEaPw5llXgJM60MJGsWAS/OU9hHi0/w2U2WWNarghSXpSUQOMxAoLOzculhD3qZC+WC7H8EpoElPOiiQu5SP2I2OxsDyoFlTp3VBN6VuYKjICqYosFD9vDp+ZkBoLscEacgnGR46jXOzm2jHUYk/OTA2qzn9zR8pqQIq6iPIYliqpvs8QTEHHFiByVadvZPaV0w02br24h4vzR1IMVhc/Z5vXZtoBFJUfE2zJRgVc3xGXkj5ddZPQmwWA69VG46/+CoNbWlqUrDKTXLCu90cgZXhaROyEwdYzJcs8y/8bmyo3R5Wd+TcmqvVbr4wW2CcmSP9ns=

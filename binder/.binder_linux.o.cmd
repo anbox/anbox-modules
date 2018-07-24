@@ -1,0 +1,1 @@
+cmd_/home/elliott/anbox-modules/binder/binder_linux.o := ld -m elf_x86_64 -z max-page-size=0x200000   -r -o /home/elliott/anbox-modules/binder/binder_linux.o /home/elliott/anbox-modules/binder/deps.o /home/elliott/anbox-modules/binder/binder.o 

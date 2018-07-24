@@ -1,0 +1,36 @@
+{
+    "package": {
+        "name": "@BINTRAY_PACKAGE@",
+        "repo": "@BINTRAY_REPO@",
+        "subject": "@BINTRAY_USER@",
+        "desc": "@BINTRAY_DESC@",
+        "website_url": "https://github.com/@GITHUB_REPO@",
+        "issue_tracker_url": "https://github.com/@GITHUB_REPO@/issues",
+        "vcs_url": "https://github.com/@GITHUB_REPO@.git",
+        "github_repo": "@GITHUB_REPO@",
+        "github_use_tag_release_notes": true,
+        "licenses": ["GPL-2.0"],
+        "public_download_numbers": true,
+        "public_stats": true
+    },
+
+    "version": {
+        "name": "@BINTRAY_VERSION@",
+        "desc": "@BINTRAY_VERSION@ release",
+        "released": "@BINTRAY_RELEASE_DATE@",
+        "vcs_tag": "@BINTRAY_VERSION@",
+        "gpgSign": false
+    },
+
+    "files": [{
+        "includePattern": "@BINTRAY_OUTDIR@/([^/]+_@BINTRAY_ARCH@\\.deb)",
+        "uploadPattern": "pool/@BINTRAY_COMPONENT@/@BINTRAY_POOLABBR@/@BINTRAY_PACKAGE@/$1",
+        "matrixParams": {
+            "deb_distribution": "@BINTRAY_SUITE@",
+            "deb_component": "@BINTRAY_COMPONENT@",
+            "deb_architecture": "@BINTRAY_ARCH@",
+            "override": 1
+        }
+    }],
+    "publish": true
+}
