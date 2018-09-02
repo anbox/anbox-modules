@@ -419,7 +419,13 @@ static int ashmem_mmap(struct file *file, struct vm_area_struct *vma)
 			fput(asma->file);
 			goto out;
 		}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+	} else {
+		vma_set_anonymous(vma);
 	}
+#else
+	}
+#endif
 
 	if (vma->vm_file)
 		fput(vma->vm_file);
