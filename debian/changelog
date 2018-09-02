@@ -1,3 +1,16 @@
+anbox-modules (13) bionic; urgency=medium
+
+  * staging: ashmem: Fix SIGBUS crash when traversing mmaped ashmem pages
+  * ashmem: account for older kernel which don't have vma_set_anonymous
+
+ -- Simon Fels <morphis@gravedo.de>  Sun, 02 Sep 2018 13:44:17 +0200
+
+anbox-modules (12) bionic; urgency=medium
+
+  * Bump version for new PPA release
+
+ -- Simon Fels <morphis@gravedo.de>  Thu, 05 Jul 2018 17:40:54 +0200
+
 anbox-modules (11) bionic; urgency=medium
 
   * Split kernel modules out of anbox main repository.
