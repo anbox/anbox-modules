@@ -18,17 +18,17 @@ fi
 
 (
 cd "$src_dir" || exit 1
-make allmodconfig
-make prepare
-make scripts
+make allmodconfig CC="${CC}" HOSTCC="${CC}"
+make scripts CC="${CC}" HOSTCC="${CC}"
+make prepare CC="${CC}" HOSTCC="${CC}"
 )
 
 (
 cd ashmem || exit 1
-make KERNEL_SRC="../${src_dir}"
+make KERNEL_SRC="../${src_dir}" CC="${CC}" HOSTCC="${CC}"
 )
 
 (
 cd binder || exit 1
-make KERNEL_SRC="../${src_dir}"
+make KERNEL_SRC="../${src_dir}" CC="${CC}" HOSTCC="${CC}"
 )

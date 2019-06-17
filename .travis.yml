@@ -1,9 +1,12 @@
 language: c
 os: linux
 sudo: false
+compiler: gcc-8
 
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
       - bison
       - flex
@@ -12,6 +15,7 @@ addons:
       - debhelper
       - dkms
       - fakeroot
+      - gcc-8
 
 env:
   - KVER=4.4
