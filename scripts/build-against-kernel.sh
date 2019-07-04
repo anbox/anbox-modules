@@ -3,6 +3,7 @@
 set -ex
 
 KVER=${1:-master}
+CC=${2:-gcc}
 
 src_dir="../linux-${KVER}"
 
