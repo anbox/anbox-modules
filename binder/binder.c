@@ -3392,7 +3392,7 @@ static void binder_vma_close(struct vm_area_struct *vma)
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
-static int binder_vm_fault(struct vm_fault *vmf)
+static unsigned int binder_vm_fault(struct vm_fault *vmf)
 #else
 static int binder_vm_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 #endif
