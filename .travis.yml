@@ -14,7 +14,7 @@ addons:
       - debhelper
       - dkms
       - fakeroot
-      - gcc-8
+      - g++-8
 
 env:
   - KVER=4.4
@@ -25,9 +25,9 @@ env:
   - KVER=4.15
   - KVER=4.16
   - KVER=4.17
-  - KVER=5.0 && CC=gcc-8
-  - KVER=5.1 && CC=gcc-8
-  - KVER=master && CC=gcc-8
+  - KVER=5.0 && CC=gcc-8 && CXX=g++-8
+  - KVER=5.1 && CC=gcc-8 && CXX=g++-8
+  - KVER=master && CC=gcc-8 && CXX=g++-8
 
 matrix:
   allow_failures:
