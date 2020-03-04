@@ -16,6 +16,9 @@ Package name for linux-headers varies on different distributions, e.g.
 `linux-headers-generic` (Ubuntu), `linux-headers-amd64` (Debian),
 `kernel-devel` (CentOS, Fedora), `kernel-default-devel` (openSUSE).
 
+
+You can either run `./INSTALL.sh` script to automate the installation steps or follow them manually below:
+
 * First install the configuration files:
 
   ```
