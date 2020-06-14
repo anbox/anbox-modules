@@ -30,6 +30,8 @@ env:
   - KVER=5.2 && CC=gcc-8
   - KVER=5.3 && CC=gcc-8
   - KVER=5.4 && CC=gcc-8
+  - KVER=5.6 && CC=gcc-8
+  - KVER=5.7 && CC=gcc-8
   - KVER=master && CC=gcc-8
 
 matrix:
