@@ -685,7 +685,7 @@ static int binder_update_page_range(struct binder_proc *proc, int allocate,
 	}
 	if (mm) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
-		down_write(&mm->mmap_lock);
+		up_write(&mm->mmap_lock);
 #else
 		up_write(&mm->mmap_sem);
 #endif
@@ -716,7 +716,7 @@ err_alloc_page_failed:
 err_no_vma:
 	if (mm) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
-		down_write(&mm->mmap_lock);
+		up_write(&mm->mmap_lock);
 #else
 		up_write(&mm->mmap_sem);
 #endif
