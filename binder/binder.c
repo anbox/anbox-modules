@@ -630,8 +630,8 @@ static int binder_update_page_range(struct binder_proc *proc, int allocate,
 		mm = get_task_mm(proc->tsk);
 
 	if (mm) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
-		down_write(&mm->mmap_base);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+		down_write(&mm->mmap_lock);
 #else
 		down_write(&mm->mmap_sem);
 #endif
@@ -684,8 +684,8 @@ static int binder_update_page_range(struct binder_proc *proc, int allocate,
 		/* vm_insert_page does not seem to increment the refcount */
 	}
 	if (mm) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
-		up_write(&mm->mmap_base);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+		down_write(&mm->mmap_lock);
 #else
 		up_write(&mm->mmap_sem);
 #endif
@@ -715,8 +715,8 @@ err_alloc_page_failed:
 	}
 err_no_vma:
 	if (mm) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
-		up_write(&mm->mmap_base);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+		down_write(&mm->mmap_lock);
 #else
 		up_write(&mm->mmap_sem);
 #endif
