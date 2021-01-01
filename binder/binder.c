@@ -630,7 +630,11 @@ static int binder_update_page_range(struct binder_proc *proc, int allocate,
 		mm = get_task_mm(proc->tsk);
 
 	if (mm) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+		mmap_write_lock(mm);
+#else
 		down_write(&mm->mmap_sem);
+#endif
 		vma = proc->vma;
 		if (vma && mm != proc->vma_vm_mm) {
 			pr_err("%d: vma mm and task mm mismatch\n",
@@ -680,7 +684,11 @@ static int binder_update_page_range(struct binder_proc *proc, int allocate,
 		/* vm_insert_page does not seem to increment the refcount */
 	}
 	if (mm) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+		mmap_write_unlock(mm);
+#else
 		up_write(&mm->mmap_sem);
+#endif
 		mmput(mm);
 	}
 	return 0;
@@ -707,7 +715,11 @@ err_alloc_page_failed:
 	}
 err_no_vma:
 	if (mm) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+		mmap_write_unlock(mm);
+#else
 		up_write(&mm->mmap_sem);
+#endif
 		mmput(mm);
 	}
 	return -ENOMEM;
