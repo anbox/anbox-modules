@@ -671,7 +671,7 @@ static int binder_update_page_range(struct binder_proc *proc, int allocate,
 					PAGE_SIZE, PAGE_KERNEL, page);
 		flush_cache_vmap((unsigned long)page_addr,
 				(unsigned long)page_addr + PAGE_SIZE);
-		if (ret != 1) {
+		if (ret < 0) {
 			pr_err("%d: binder_alloc_buf failed to map page at %p in kernel\n",
 			       proc->pid, page_addr);
 			goto err_map_kernel_failed;
