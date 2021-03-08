@@ -46,6 +46,9 @@
 #include <linux/slab.h>
 #include <linux/pid_namespace.h>
 #include <linux/security.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+#include <linux/mmap_lock.h>
+#endif
 
 #ifdef CONFIG_ANDROID_BINDER_IPC_32BIT
 #define BINDER_IPC_32BIT 1
@@ -630,7 +633,11 @@ static int binder_update_page_range(struct binder_proc *proc, int allocate,
 		mm = get_task_mm(proc->tsk);
 
 	if (mm) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+		mmap_write_lock(mm);
+#else
 		down_write(&mm->mmap_sem);
+#endif
 		vma = proc->vma;
 		if (vma && mm != proc->vma_vm_mm) {
 			pr_err("%d: vma mm and task mm mismatch\n",
@@ -664,7 +671,7 @@ static int binder_update_page_range(struct binder_proc *proc, int allocate,
 					PAGE_SIZE, PAGE_KERNEL, page);
 		flush_cache_vmap((unsigned long)page_addr,
 				(unsigned long)page_addr + PAGE_SIZE);
-		if (ret != 1) {
+		if (ret < 0) {
 			pr_err("%d: binder_alloc_buf failed to map page at %p in kernel\n",
 			       proc->pid, page_addr);
 			goto err_map_kernel_failed;
@@ -680,7 +687,11 @@ static int binder_update_page_range(struct binder_proc *proc, int allocate,
 		/* vm_insert_page does not seem to increment the refcount */
 	}
 	if (mm) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+		mmap_write_unlock(mm);
+#else
 		up_write(&mm->mmap_sem);
+#endif
 		mmput(mm);
 	}
 	return 0;
@@ -707,7 +718,11 @@ err_alloc_page_failed:
 	}
 err_no_vma:
 	if (mm) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+		mmap_write_unlock(mm);
+#else
 		up_write(&mm->mmap_sem);
+#endif
 		mmput(mm);
 	}
 	return -ENOMEM;
