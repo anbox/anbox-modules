@@ -66,6 +66,7 @@
 #include <linux/syscalls.h>
 #include <linux/task_work.h>
 #include <linux/sizes.h>
+#include <linux/version.h>
 
 #include <uapi/linux/android/binder.h>
 #include <uapi/linux/android/binderfs.h>
@@ -2225,7 +2226,11 @@ static void binder_deferred_fd_close(int fd)
 	if (!twcb)
 		return;
 	init_task_work(&twcb->twork, binder_do_fd_close);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,11,0))
+	close_fd_get_file(fd, &twcb->file);
+#else
 	__close_fd_get_file(fd, &twcb->file);
+#endif
 	if (twcb->file) {
 		filp_close(twcb->file, current->files);
 		task_work_add(current, &twcb->twork, TWA_RESUME);
@@ -3089,7 +3094,11 @@ static void binder_transaction(struct binder_proc *proc,
 		u32 secid;
 		size_t added_size;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 13, 0)
+		security_task_getsecid_obj(proc->tsk, &secid);
+#else
 		security_task_getsecid(proc->tsk, &secid);
+#endif
 		ret = security_secid_to_secctx(secid, &secctx, &secctx_sz);
 		if (ret) {
 			return_error = BR_FAILED_REPLY;

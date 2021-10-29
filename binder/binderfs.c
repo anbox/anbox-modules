@@ -29,6 +29,7 @@
 #include <linux/types.h>
 #include <linux/uaccess.h>
 #include <linux/user_namespace.h>
+#include <linux/version.h>
 #include <linux/xarray.h>
 #include <uapi/asm-generic/errno-base.h>
 #include <uapi/linux/android/binder.h>
@@ -356,15 +357,25 @@ static inline bool is_binderfs_control_device(const struct dentry *dentry)
 	return info->control_dentry == dentry;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,12,0))
+static int binderfs_rename(struct user_namespace *namespace, struct inode *old_dir,
+			   struct dentry *old_dentry, struct inode *new_dir,
+			   struct dentry *new_dentry, unsigned int flags)
+#else
 static int binderfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 			   struct inode *new_dir, struct dentry *new_dentry,
 			   unsigned int flags)
+#endif
 {
 	if (is_binderfs_control_device(old_dentry) ||
 	    is_binderfs_control_device(new_dentry))
 		return -EPERM;
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,12,0))
+	return simple_rename(namespace, old_dir, old_dentry, new_dir, new_dentry, flags);
+#else
 	return simple_rename(old_dir, old_dentry, new_dir, new_dentry, flags);
+#endif
 }
 
 static int binderfs_unlink(struct inode *dir, struct dentry *dentry)

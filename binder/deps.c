@@ -69,13 +69,21 @@ static unsigned long kallsyms_lookup_name_wrapper(const char *name)
 }
 
 
-static int (*__close_fd_get_file_ptr)(unsigned int fd, struct file **res) = NULL;
+static int (*close_fd_get_file_ptr)(unsigned int fd, struct file **res) = NULL;
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,11,0))
+int close_fd_get_file(unsigned int fd, struct file **res)
+#else
 int __close_fd_get_file(unsigned int fd, struct file **res)
+#endif
 {
-    if (!__close_fd_get_file_ptr)
-		__close_fd_get_file_ptr = kallsyms_lookup_name_wrapper("__close_fd_get_file");
-    return __close_fd_get_file_ptr(fd, res);
+	if (!close_fd_get_file_ptr)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,11,0))
+		close_fd_get_file_ptr = kallsyms_lookup_name_wrapper("close_fd_get_file");
+#else
+		close_fd_get_file_ptr = kallsyms_lookup_name_wrapper("__close_fd_get_file");
+#endif
+	return close_fd_get_file_ptr(fd, res);
 }
 
 static int (*can_nice_ptr)(const struct task_struct *, const int) = NULL;
