@@ -420,6 +420,9 @@ enum binder_deferred_state {
  *                        (invariant after initialized)
  * @tsk                   task_struct for group_leader of process
  *                        (invariant after initialized)
+ * @cred                  struct cred associated with the `struct file`
+ *                        in binder_open()
+ *                        (invariant after initialized)
  * @deferred_work_node:   element for binder_deferred_list
  *                        (protected by binder_deferred_lock)
  * @deferred_work:        bitmap of deferred work to perform
@@ -465,9 +468,15 @@ struct binder_proc {
 	struct list_head waiting_threads;
 	int pid;
 	struct task_struct *tsk;
+	const struct cred *cred;
 	struct hlist_node deferred_work_node;
 	int deferred_work;
+	int outstanding_txns;
 	bool is_dead;
+	bool is_frozen;
+	bool sync_recv;
+	bool async_recv;
+	wait_queue_head_t freeze_wait;
 
 	struct list_head todo;
 	struct binder_stats stats;
@@ -483,6 +492,7 @@ struct binder_proc {
 	spinlock_t inner_lock;
 	spinlock_t outer_lock;
 	struct dentry *binderfs_entry;
+	bool oneway_spam_detection_enabled;
 };
 
 enum {
@@ -2436,7 +2446,7 @@ static int binder_translate_binder(struct flat_binder_object *fp,
 		goto done;
 	}
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,2))
-	if (security_binder_transfer_binder(proc->tsk->real_cred, target_proc->tsk->real_cred)) {
+	if (security_binder_transfer_binder(proc->cred, target_proc->cred)) {
 #else
 	if (security_binder_transfer_binder(proc->tsk, target_proc->tsk)) {
 #endif
@@ -2486,7 +2496,7 @@ static int binder_translate_handle(struct flat_binder_object *fp,
 		return -EINVAL;
 	}
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,2))
-	if (security_binder_transfer_binder(proc->tsk->real_cred, target_proc->tsk->real_cred)) {
+	if (security_binder_transfer_binder(proc->cred, target_proc->cred)) {
 #else
 	if (security_binder_transfer_binder(proc->tsk, target_proc->tsk)) {
 #endif
@@ -2578,7 +2588,7 @@ static int binder_translate_fd(u32 fd, binder_size_t fd_offset,
 		goto err_fget;
 	}
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,2))
-	ret = security_binder_transfer_file(proc->tsk->real_cred, target_proc->tsk->real_cred, file);
+	ret = security_binder_transfer_file(proc->cred, target_proc->cred, file);
 #else
 	ret = security_binder_transfer_file(proc->tsk, target_proc->tsk, file);
 #endif
@@ -2980,8 +2990,8 @@ static void binder_transaction(struct binder_proc *proc,
 			goto err_invalid_target_handle;
 		}
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,2))
-		if (security_binder_transaction(proc->tsk->real_cred,
-						target_proc->tsk->real_cred) < 0) {
+		if (security_binder_transaction(proc->cred,
+						target_proc->cred) < 0) {
 #else
 		if (security_binder_transaction(proc->tsk,
 						target_proc->tsk) < 0) {
@@ -4928,7 +4938,7 @@ static int binder_ioctl_set_ctx_mgr(struct file *filp,
 		goto out;
 	}
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,2))
-	ret = security_binder_set_context_mgr(proc->tsk->real_cred);
+	ret = security_binder_set_context_mgr(proc->cred);
 #else
 	ret = security_binder_set_context_mgr(proc->tsk);
 #endif
@@ -5238,6 +5248,7 @@ static int binder_open(struct inode *nodp, struct file *filp)
 	spin_lock_init(&proc->outer_lock);
 	get_task_struct(current->group_leader);
 	proc->tsk = current->group_leader;
+	proc->cred = get_cred(filp->f_cred);
 	INIT_LIST_HEAD(&proc->todo);
 	proc->default_priority = task_nice(current);
 	/* binderfs stashes devices in i_private */
