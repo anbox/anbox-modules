@@ -2244,6 +2244,9 @@ static void binder_deferred_fd_close(int fd)
 	__close_fd_get_file(fd, &twcb->file);
 #endif
 	if (twcb->file) {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,19,0))
+        get_file(twcb->file);
+#endif
 		filp_close(twcb->file, current->files);
 		task_work_add(current, &twcb->twork, TWA_RESUME);
 	} else {

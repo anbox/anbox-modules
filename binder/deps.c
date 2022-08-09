@@ -70,11 +70,12 @@ static unsigned long kallsyms_lookup_name_wrapper(const char *name)
 #endif
 }
 
-static int (*close_fd_get_file_ptr)(unsigned int fd
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,19,0))
-        , struct file **res
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,19,0))
+static struct file *(*close_fd_get_file_ptr)(unsigned int fd)
+#else
+static int (*close_fd_get_file_ptr)(unsigned int fd, struct file **res)
 #endif
-        ) = NULL;
+        = NULL;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,19,0))
 struct file *close_fd_get_file(unsigned int fd)
