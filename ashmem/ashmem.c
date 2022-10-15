@@ -874,7 +874,11 @@ static int __init ashmem_init(void)
 		return ret;
 	}
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,0,0))
+	register_shrinker(&ashmem_shrinker, "android-ashmem");
+#else
 	register_shrinker(&ashmem_shrinker);
+#endif
 
 	return 0;
 }
