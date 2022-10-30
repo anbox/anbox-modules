@@ -57,3 +57,46 @@ ashmem_linux           16384  0
 crw-rw-rw- 1 root root  10, 55 Jun 19 16:30 /dev/ashmem
 crw-rw-rw- 1 root root 511,  0 Jun 19 16:30 /dev/binder
 ```
+
+# Uninstall Instructions
+
+ou can either run `./UNINSTALL.sh` script to automate the installation steps or follow them manually below:
+
+* First use dkms to remove the modules:
+
+  ```
+  $ sudo dkms remove anbox-ashmem/1
+  $ sudo dkms remove anbox-binder/1
+  ```
+
+* Then remove the module sources from /usr/src/:
+
+  ```
+  $ sudo rm -rf /usr/src/anbox-ashmem-1
+  $ sudo rm -rf /usr/src/anbox-binder-1
+  ```
+
+* Finally remove the configuration files:
+
+  ```
+  $ sudo rm -f /etc/modules-load.d/anbox.conf
+  $ sudo rm -f /lib/udev/rules.d/99-anbox.rules 
+  ```
+
+You must then restart your device. You can then verify modules were removed by trying to load the modules and checking the created devices:
+
+```
+$ sudo modprobe ashmem_linux
+$ sudo modprobe binder_linux
+$ lsmod | grep -e ashmem_linux -e binder_linux
+$ ls -alh /dev/binder /dev/ashmem
+```
+
+You are expected to see output like:
+
+```
+modprobe: FATAL: Module ashmem_linux not found in directory /lib/modules/6.0.2-76060002-generic
+modprobe: FATAL: Module binder_linux not found in directory /lib/modules/6.0.2-76060002-generic
+ls: cannot access '/dev/binder': No such file or directory
+ls: cannot access '/dev/ashmem': No such file or directory
+```
