@@ -4114,7 +4114,7 @@ static int binder_wait_for_work(struct binder_thread *thread,
 #endif
 	binder_inner_proc_lock(proc);
 	for (;;) {
-		prepare_to_wait(&thread->wait, &wait, TASK_INTERRUPTIBLE);
+		prepare_to_wait(&thread->wait, &wait, TASK_INTERRUPTIBLE|TASK_FREEZABLE);
 		if (binder_has_work_ilocked(thread, do_proc_work))
 			break;
 		if (do_proc_work)
