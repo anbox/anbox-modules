@@ -4109,12 +4109,16 @@ static int binder_wait_for_work(struct binder_thread *thread,
 	struct binder_proc *proc = thread->proc;
 	int ret = 0;
 
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,0,0)
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6,1,0))
 	freezer_do_not_count();
 #endif
 	binder_inner_proc_lock(proc);
 	for (;;) {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6,1,0))
+		prepare_to_wait(&thread->wait, &wait, TASK_INTERRUPTIBLE);
+#else
 		prepare_to_wait(&thread->wait, &wait, TASK_INTERRUPTIBLE|TASK_FREEZABLE);
+#endif
 		if (binder_has_work_ilocked(thread, do_proc_work))
 			break;
 		if (do_proc_work)
@@ -4131,7 +4135,7 @@ static int binder_wait_for_work(struct binder_thread *thread,
 	}
 	finish_wait(&thread->wait, &wait);
 	binder_inner_proc_unlock(proc);
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,0,0)
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6,1,0))
 	freezer_count();
 #endif
 
