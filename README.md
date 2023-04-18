@@ -22,31 +22,31 @@ You can either run `./INSTALL.sh` script to automate the installation steps or f
 * First install the configuration files:
 
   ```
-  $ sudo cp anbox.conf /etc/modules-load.d/
-  $ sudo cp 99-anbox.rules /lib/udev/rules.d/
+   sudo cp anbox.conf /etc/modules-load.d/
+   sudo cp 99-anbox.rules /lib/udev/rules.d/
   ```
 
 * Then copy the module sources to `/usr/src/`:
 
   ```
-  $ sudo cp -rT ashmem /usr/src/anbox-ashmem-1
-  $ sudo cp -rT binder /usr/src/anbox-binder-1
+   sudo cp -rT ashmem /usr/src/anbox-ashmem-1
+   sudo cp -rT binder /usr/src/anbox-binder-1
   ```
 
 * Finally use `dkms` to build and install:
 
   ```
-  $ sudo dkms install anbox-ashmem/1
-  $ sudo dkms install anbox-binder/1
+   sudo dkms install anbox-ashmem/1
+   sudo dkms install anbox-binder/1
   ```
 
 You can verify by loading these modules and checking the created devices:
 
 ```
-$ sudo modprobe ashmem_linux
-$ sudo modprobe binder_linux
-$ lsmod | grep -e ashmem_linux -e binder_linux
-$ ls -alh /dev/binder /dev/ashmem
+ sudo modprobe ashmem_linux
+ sudo modprobe binder_linux
+ lsmod | grep -e ashmem_linux -e binder_linux
+ ls -alh /dev/binder /dev/ashmem
 ```
 
 You are expected to see output like:
@@ -65,31 +65,31 @@ ou can either run `./UNINSTALL.sh` script to automate the installation steps or 
 * First use dkms to remove the modules:
 
   ```
-  $ sudo dkms remove anbox-ashmem/1
-  $ sudo dkms remove anbox-binder/1
+   sudo dkms remove anbox-ashmem/1
+   sudo dkms remove anbox-binder/1
   ```
 
 * Then remove the module sources from /usr/src/:
 
   ```
-  $ sudo rm -rf /usr/src/anbox-ashmem-1
-  $ sudo rm -rf /usr/src/anbox-binder-1
+   sudo rm -rf /usr/src/anbox-ashmem-1
+   sudo rm -rf /usr/src/anbox-binder-1
   ```
 
 * Finally remove the configuration files:
 
   ```
-  $ sudo rm -f /etc/modules-load.d/anbox.conf
-  $ sudo rm -f /lib/udev/rules.d/99-anbox.rules 
+   sudo rm -f /etc/modules-load.d/anbox.conf
+   sudo rm -f /lib/udev/rules.d/99-anbox.rules 
   ```
 
 You must then restart your device. You can then verify modules were removed by trying to load the modules and checking the created devices:
 
 ```
-$ sudo modprobe ashmem_linux
-$ sudo modprobe binder_linux
-$ lsmod | grep -e ashmem_linux -e binder_linux
-$ ls -alh /dev/binder /dev/ashmem
+ sudo modprobe ashmem_linux
+ sudo modprobe binder_linux
+ lsmod | grep -e ashmem_linux -e binder_linux
+ ls -alh /dev/binder /dev/ashmem
 ```
 
 You are expected to see output like:
