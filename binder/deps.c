@@ -164,6 +164,16 @@ int task_work_add(struct task_struct *task, struct callback_head *work,
 	return task_work_add_ptr(task, work, notify);
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,3,0))
+static void (*zap_page_range_single_ptr)(struct vm_area_struct *, unsigned long, unsigned long, struct zap_details *) = NULL;
+
+void zap_page_range_single(struct vm_area_struct *vma, unsigned long address, unsigned long size, struct zap_details *details)
+{
+	if (!zap_page_range_single_ptr)
+		zap_page_range_single_ptr = kallsyms_lookup_name_wrapper("zap_page_range_single");
+	zap_page_range_single_ptr(vma, address, size, details);
+}
+#else
 static void (*zap_page_range_ptr)(struct vm_area_struct *, unsigned long, unsigned long) = NULL;
 
 void zap_page_range(struct vm_area_struct *vma, unsigned long address, unsigned long size)
@@ -172,6 +182,7 @@ void zap_page_range(struct vm_area_struct *vma, unsigned long address, unsigned 
 		zap_page_range_ptr = kallsyms_lookup_name_wrapper("zap_page_range");
 	zap_page_range_ptr(vma, address, size);
 }
+#endif
 
 static void (*put_ipc_ns_ptr)(struct ipc_namespace *ns) = NULL;
 

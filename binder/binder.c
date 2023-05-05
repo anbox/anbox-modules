@@ -5234,8 +5234,12 @@ static int binder_mmap(struct file *filp, struct vm_area_struct *vma)
 		       proc->pid, vma->vm_start, vma->vm_end, "bad vm_flags", -EPERM);
 		return -EPERM;
 	}
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,3,0))
+	vm_flags_mod(vma, VM_DONTCOPY | VM_MIXEDMAP, VM_MAYWRITE);
+#else
 	vma->vm_flags |= VM_DONTCOPY | VM_MIXEDMAP;
 	vma->vm_flags &= ~VM_MAYWRITE;
+#endif
 
 	vma->vm_ops = &binder_vm_ops;
 	vma->vm_private_data = proc;
