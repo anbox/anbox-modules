@@ -146,7 +146,11 @@ static int binderfs_binder_device_create(struct inode *ref_inode,
 		goto err;
 
 	inode->i_ino = minor + INODE_OFFSET;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,6,0))
+	inode->i_mtime = inode->i_atime = inode_set_ctime_current(inode);
+#else
 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
+#endif
 	init_special_inode(inode, S_IFCHR | 0600,
 			   MKDEV(MAJOR(binderfs_dev), minor));
 	inode->i_fop = &binder_fops;
@@ -453,7 +457,11 @@ static int binderfs_binder_ctl_create(struct super_block *sb)
 	}
 
 	inode->i_ino = SECOND_INODE;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,6,0))
+	inode->i_mtime = inode->i_atime = inode_set_ctime_current(inode);
+#else
 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
+#endif
 	init_special_inode(inode, S_IFCHR | 0600,
 			   MKDEV(MAJOR(binderfs_dev), minor));
 	inode->i_fop = &binder_ctl_fops;
@@ -495,7 +503,11 @@ static struct inode *binderfs_make_inode(struct super_block *sb, int mode)
 	if (ret) {
 		ret->i_ino = iunique(sb, BINDERFS_MAX_MINOR + INODE_OFFSET);
 		ret->i_mode = mode;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,6,0))
+		ret->i_atime = ret->i_mtime = inode_set_ctime_current(ret);
+#else
 		ret->i_atime = ret->i_mtime = ret->i_ctime = current_time(ret);
+#endif
 	}
 	return ret;
 }
@@ -718,7 +730,11 @@ static int binderfs_fill_super(struct super_block *sb, struct fs_context *fc)
 	inode->i_ino = FIRST_INODE;
 	inode->i_fop = &simple_dir_operations;
 	inode->i_mode = S_IFDIR | 0755;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,6,0))
+	inode->i_mtime = inode->i_atime = inode_set_ctime_current(inode);
+#else
 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
+#endif
 	inode->i_op = &binderfs_dir_inode_operations;
 	set_nlink(inode, 2);
 
