@@ -464,7 +464,12 @@ static long task_close_fd(struct binder_proc *proc, unsigned int fd)
 	if (proc->files == NULL)
 		return -ESRCH;
 
+#if defined(RHEL_MAJOR) && RHEL_MAJOR == 8
+	retval = close_fd(fd);
+#else
 	retval = __close_fd(proc->files, fd);
+#endif
+
 	/* can't restart close syscall because file table entry was cleared */
 	if (unlikely(retval == -ERESTARTSYS ||
 		     retval == -ERESTARTNOINTR ||
@@ -3393,6 +3398,8 @@ static void binder_vma_close(struct vm_area_struct *vma)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)
 static vm_fault_t binder_vm_fault(struct vm_fault *vmf)
+#elif defined(RHEL_MAJOR) && RHEL_MAJOR == 8
+static unsigned int binder_vm_fault(struct vm_fault *vmf)
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 static int binder_vm_fault(struct vm_fault *vmf)
 #else
