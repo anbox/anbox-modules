@@ -390,7 +390,11 @@ static int ashmem_mmap(struct file *file, struct vm_area_struct *vma)
 		ret = -EPERM;
 		goto out;
 	}
-	vm_flags_clear(vma, calc_vm_may_flags(~asma->prot_mask));
+	#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+		vm_flags_clear(vma, calc_vm_may_flags(~asma->prot_mask));
+	#else
+		vma->vm_flags &= ~calc_vm_may_flags(~asma->prot_mask);
+	#endif
 
 	if (!asma->file) {
 		char *name = ASHMEM_NAME_DEF;
