@@ -494,6 +494,9 @@ ashmem_shrink_count(struct shrinker *shrink, struct shrink_control *sc)
 	return lru_count;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,7,0))
+static struct shrinker *ashmem_shrinker;
+#else
 static struct shrinker ashmem_shrinker = {
 	.count_objects = ashmem_shrink_count,
 	.scan_objects = ashmem_shrink_scan,
@@ -503,6 +506,7 @@ static struct shrinker ashmem_shrinker = {
 	 */
 	.seeks = DEFAULT_SEEKS * 4,
 };
+#endif
 
 static int set_prot_mask(struct ashmem_area *asma, unsigned long prot)
 {
@@ -807,8 +811,13 @@ static long ashmem_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 				.gfp_mask = GFP_KERNEL,
 				.nr_to_scan = LONG_MAX,
 			};
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,7,0))
+			ret = ashmem_shrink_count(ashmem_shrinker, &sc);
+			ashmem_shrink_scan(ashmem_shrinker, &sc);
+#else
 			ret = ashmem_shrink_count(&ashmem_shrinker, &sc);
 			ashmem_shrink_scan(&ashmem_shrinker, &sc);
+#endif
 		}
 		break;
 	}
@@ -878,7 +887,17 @@ static int __init ashmem_init(void)
 		return ret;
 	}
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,0,0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,7,0))
+	ashmem_shrinker = shrinker_alloc(0, "android-ashmem");
+	if (ashmem_shrinker) {
+		ashmem_shrinker->count_objects = ashmem_shrink_count;
+		ashmem_shrinker->scan_objects = ashmem_shrink_scan;
+		ashmem_shrinker->seeks = DEFAULT_SEEKS * 4;
+		shrinker_register(ashmem_shrinker);
+	} else {
+		return -ENOMEM;
+	}
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(6,0,0)) 
 	register_shrinker(&ashmem_shrinker, "android-ashmem");
 #else
 	register_shrinker(&ashmem_shrinker);
@@ -889,7 +908,11 @@ static int __init ashmem_init(void)
 
 static void __exit ashmem_exit(void)
 {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,7,0))
+	shrinker_free(ashmem_shrinker);
+#else
 	unregister_shrinker(&ashmem_shrinker);
+#endif
 
 	misc_deregister(&ashmem_misc);
 

@@ -1059,11 +1059,15 @@ binder_shrink_scan(struct shrinker *shrink, struct shrink_control *sc)
 	return ret;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,7,0))
+static struct shrinker *binder_shrinker;
+#else
 static struct shrinker binder_shrinker = {
 	.count_objects = binder_shrink_count,
 	.scan_objects = binder_shrink_scan,
 	.seeks = DEFAULT_SEEKS,
 };
+#endif
 
 /**
  * binder_alloc_init() - called by binder_open() for per-proc initialization
@@ -1084,7 +1088,16 @@ int binder_alloc_shrinker_init(void)
 	int ret = list_lru_init(&binder_alloc_lru);
 
 	if (ret == 0) {
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,0,0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,7,0))
+		binder_shrinker = shrinker_alloc(0, "android-binder");
+		if (binder_shrinker) {
+			binder_shrinker->count_objects = binder_shrink_count;
+			binder_shrinker->scan_objects = binder_shrink_scan;
+			shrinker_register(binder_shrinker);
+		} else {
+			ret = -ENOMEM;
+		}
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(6,0,0))
 		ret = register_shrinker(&binder_shrinker, "android-binder");
 #else
 		ret = register_shrinker(&binder_shrinker);
@@ -1097,7 +1110,11 @@ int binder_alloc_shrinker_init(void)
 
 void binder_alloc_shrinker_exit(void)
 {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,7,0))
+	shrinker_free(binder_shrinker);
+#else
 	unregister_shrinker(&binder_shrinker);
+#endif
 	list_lru_destroy(&binder_alloc_lru);
 }
 
