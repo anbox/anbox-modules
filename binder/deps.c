@@ -77,7 +77,9 @@ static int (*close_fd_get_file_ptr)(unsigned int fd, struct file **res)
 #endif
         = NULL;
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,19,0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,8,0))
+struct file *file_close_fd(unsigned int fd)
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5,19,0))
 struct file *close_fd_get_file(unsigned int fd)
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5,11,0))
 int close_fd_get_file(unsigned int fd, struct file **res)
@@ -86,7 +88,9 @@ int __close_fd_get_file(unsigned int fd, struct file **res)
 #endif
 {
 	if (!close_fd_get_file_ptr)
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,11,0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,8,0))
+		close_fd_get_file_ptr = kallsyms_lookup_name_wrapper("file_close_fd");
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5,11,0))
 		close_fd_get_file_ptr = kallsyms_lookup_name_wrapper("close_fd_get_file");
 #else
 		close_fd_get_file_ptr = kallsyms_lookup_name_wrapper("__close_fd_get_file");
